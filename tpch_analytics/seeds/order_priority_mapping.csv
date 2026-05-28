@@ -1,0 +1,6 @@
+order_priority,priority_label,priority_rank
+1-URGENT,Urgent,1
+2-HIGH,High,2
+3-MEDIUM,Medium,3
+4-NOT SPECIFIED,Not Specified,4
+5-LOW,Low,5

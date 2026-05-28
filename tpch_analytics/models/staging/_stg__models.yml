@@ -1,0 +1,183 @@
+version: 2
+
+models:
+  - name: stg_tpch__orders
+    description: "Commandes nettoyees depuis la source TPCH"
+    columns:
+      - name: order_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: customer_key
+        description: "Cle etrangere vers les clients"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_tpch__customers')
+              field: customer_key
+      - name: order_status
+        description: "{{ doc('order_status') }}"
+        tests:
+          - accepted_values:
+              values: ['F', 'O', 'P']
+      - name: total_price
+        description: "Montant total de la commande"
+      - name: order_date
+        description: "Date de la commande"
+        tests:
+          - not_null
+      - name: order_priority
+        description: "Niveau de priorite de la commande"
+
+  - name: stg_tpch__customers
+    description: "Donnees maitres des clients nettoyees"
+    columns:
+      - name: customer_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: customer_name
+        description: "Nom du client"
+        tests:
+          - not_null
+      - name: nation_key
+        description: "Cle etrangere vers la table des nations"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_tpch__nations')
+              field: nation_key
+      - name: market_segment
+        description: "{{ doc('market_segment') }}"
+        tests:
+          - accepted_values:
+              values: ['AUTOMOBILE', 'BUILDING', 'FURNITURE', 'HOUSEHOLD', 'MACHINERY']
+      - name: account_balance
+        description: "Solde du compte client"
+
+  - name: stg_tpch__line_items
+    description: "Lignes de commande nettoyees avec prix calcules"
+    columns:
+      - name: line_item_key
+        description: "Cle surrogate (order_key + line_number)"
+        tests:
+          - unique
+          - not_null
+      - name: order_key
+        description: "Cle etrangere vers les commandes"
+        tests:
+          - not_null
+      - name: part_key
+        description: "Cle etrangere vers les pieces"
+        tests:
+          - not_null
+      - name: supplier_key
+        description: "Cle etrangere vers les fournisseurs"
+        tests:
+          - not_null
+      - name: quantity
+        description: "Quantite commandee"
+      - name: extended_price
+        description: "Prix brut (quantite x prix unitaire)"
+      - name: discount_percentage
+        description: "Pourcentage de remise applique (0 a 0.10)"
+      - name: return_flag
+        description: "{{ doc('return_flag') }}"
+      - name: ship_mode
+        description: "{{ doc('ship_mode') }}"
+      - name: discounted_price
+        description: "Prix apres remise : extended_price * (1 - discount)"
+      - name: final_price
+        description: "Prix final TTC : discounted_price * (1 + tax)"
+
+  - name: stg_tpch__parts
+    description: "Catalogue de pieces nettoye"
+    columns:
+      - name: part_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: part_name
+        description: "Nom de la piece"
+      - name: brand
+        description: "Marque de la piece"
+      - name: retail_price
+        description: "Prix de vente conseille"
+
+  - name: stg_tpch__suppliers
+    description: "Donnees maitres des fournisseurs nettoyees"
+    columns:
+      - name: supplier_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: supplier_name
+        description: "Nom du fournisseur"
+        tests:
+          - not_null
+      - name: nation_key
+        description: "Cle etrangere vers la table des nations"
+        tests:
+          - relationships:
+              to: ref('stg_tpch__nations')
+              field: nation_key
+
+  - name: stg_tpch__part_suppliers
+    description: "Relation piece-fournisseur nettoyee"
+    columns:
+      - name: part_supplier_key
+        description: "Cle surrogate (part_key + supplier_key)"
+        tests:
+          - unique
+          - not_null
+      - name: part_key
+        description: "Cle etrangere vers les pieces"
+        tests:
+          - not_null
+      - name: supplier_key
+        description: "Cle etrangere vers les fournisseurs"
+        tests:
+          - not_null
+      - name: available_quantity
+        description: "Quantite disponible chez ce fournisseur"
+      - name: supply_cost
+        description: "Cout d'approvisionnement"
+
+  - name: stg_tpch__nations
+    description: "Donnees de reference des nations nettoyees"
+    columns:
+      - name: nation_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: nation_name
+        description: "Nom de la nation"
+        tests:
+          - not_null
+      - name: region_key
+        description: "Cle etrangere vers les regions"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_tpch__regions')
+              field: region_key
+
+  - name: stg_tpch__regions
+    description: "Donnees de reference des regions nettoyees"
+    columns:
+      - name: region_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: region_name
+        description: "Nom de la region"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['AFRICA', 'AMERICA', 'ASIA', 'EUROPE', 'MIDDLE EAST']

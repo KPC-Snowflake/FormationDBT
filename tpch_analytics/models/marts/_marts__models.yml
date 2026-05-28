@@ -1,0 +1,152 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: "Table de faits des commandes enrichie avec informations client et metriques agregees"
+    columns:
+      - name: order_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: customer_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_key
+      - name: net_amount
+        description: "Montant net total de la commande"
+        tests:
+          - not_null
+      - name: order_date
+        tests:
+          - not_null
+      - name: days_to_fulfill
+        description: "Nombre de jours entre la date de commande et la derniere expedition"
+
+  - name: fct_order_items
+    description: "Table de faits des lignes de commande (modele incremental)"
+    config:
+      tags: ['incremental']
+    columns:
+      - name: line_item_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: order_key
+        tests:
+          - not_null
+      - name: final_price
+        description: "Prix final TTC de la ligne"
+
+  - name: dim_customers
+    description: "Dimension clients enrichie avec nation et region"
+    columns:
+      - name: customer_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: customer_name
+        tests:
+          - not_null
+      - name: nation_name
+        description: "Nom du pays du client"
+      - name: region_name
+        description: "Nom de la region du client"
+      - name: market_segment
+        tests:
+          - accepted_values:
+              values: ['AUTOMOBILE', 'BUILDING', 'FURNITURE', 'HOUSEHOLD', 'MACHINERY']
+
+  - name: dim_parts
+    description: "Dimension pieces enrichie avec metriques fournisseurs"
+    columns:
+      - name: part_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: supplier_count
+        description: "Nombre de fournisseurs pour cette piece"
+
+  - name: dim_suppliers
+    description: "Dimension fournisseurs enrichie avec localisation et metriques"
+    columns:
+      - name: supplier_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: supplier_name
+        tests:
+          - not_null
+      - name: nation_name
+        description: "Pays du fournisseur"
+      - name: parts_supplied_count
+        description: "Nombre de pieces fournies"
+
+  - name: agg_customer_lifetime_value
+    description: "Valeur a vie des clients : total commandes, montant cumule, anciennete"
+    columns:
+      - name: customer_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: lifetime_value
+        description: "Valeur totale cumulee des commandes du client"
+        tests:
+          - not_null
+      - name: total_orders
+        description: "Nombre total de commandes"
+      - name: customer_tenure_days
+        description: "Anciennete du client en jours (premiere a derniere commande)"
+
+  - name: agg_supplier_performance
+    description: "Performance des fournisseurs : volume, revenus, taux de retour, delais"
+    columns:
+      - name: supplier_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: total_revenue
+        description: "Chiffre d'affaires total genere"
+      - name: return_rate
+        description: "Taux de retour (0 a 1)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true
+      - name: avg_delivery_days
+        description: "Delai moyen de livraison en jours"
+
+unit_tests:
+  - name: test_clv_calculation
+    description: "Verifie que la valeur a vie est correctement calculee"
+    model: agg_customer_lifetime_value
+    given:
+      - input: ref('fct_orders')
+        rows:
+          - {order_key: 100, customer_key: 1, customer_name: "Test Co", market_segment: "BUILDING",
+             order_date: "1995-01-01", order_status: "F", order_priority: "1-URGENT",
+             line_item_count: 2, total_quantity: 10, gross_amount: 600.00,
+             discounted_amount: 550.00, net_amount: 500.00,
+             first_ship_date: "1995-01-10", last_ship_date: "1995-01-15", days_to_fulfill: 14}
+          - {order_key: 101, customer_key: 1, customer_name: "Test Co", market_segment: "BUILDING",
+             order_date: "1995-06-01", order_status: "F", order_priority: "3-MEDIUM",
+             line_item_count: 1, total_quantity: 5, gross_amount: 350.00,
+             discounted_amount: 320.00, net_amount: 300.00,
+             first_ship_date: "1995-06-05", last_ship_date: "1995-06-05", days_to_fulfill: 4}
+      - input: ref('dim_customers')
+        rows:
+          - {customer_key: 1, customer_name: "Test Co", address: "123 Rue", phone: "555-0001",
+             account_balance: 1000.00, market_segment: "BUILDING",
+             nation_name: "FRANCE", nation_key: 1, region_name: "EUROPE", region_key: 3}
+    expect:
+      rows:
+        - {customer_key: 1, total_orders: 2, lifetime_value: 800.00, avg_order_value: 400.00}

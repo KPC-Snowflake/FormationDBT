@@ -1,0 +1,56 @@
+version: 2
+
+sources:
+  - name: tpch
+    description: "Donnees benchmark TPC-H depuis la base Snowflake Sample Data"
+    database: SNOWFLAKE_SAMPLE_DATA
+    schema: TPCH_SF1
+    tables:
+      - name: ORDERS
+        description: "Commandes clients avec statut et priorite"
+        columns:
+          - name: O_ORDERKEY
+            description: "Cle primaire de la table des commandes"
+            tests:
+              - unique
+              - not_null
+      - name: CUSTOMER
+        description: "Donnees maitres des clients"
+        columns:
+          - name: C_CUSTKEY
+            description: "Cle primaire de la table clients"
+            tests:
+              - unique
+              - not_null
+      - name: LINEITEM
+        description: "Lignes de commande avec details de prix et expedition"
+      - name: PART
+        description: "Catalogue de pieces/produits"
+        columns:
+          - name: P_PARTKEY
+            tests:
+              - unique
+              - not_null
+      - name: SUPPLIER
+        description: "Donnees maitres des fournisseurs"
+        columns:
+          - name: S_SUPPKEY
+            tests:
+              - unique
+              - not_null
+      - name: PARTSUPP
+        description: "Relation piece-fournisseur avec cout et disponibilite"
+      - name: NATION
+        description: "Donnees de reference des nations"
+        columns:
+          - name: N_NATIONKEY
+            tests:
+              - unique
+              - not_null
+      - name: REGION
+        description: "Donnees de reference des regions"
+        columns:
+          - name: R_REGIONKEY
+            tests:
+              - unique
+              - not_null

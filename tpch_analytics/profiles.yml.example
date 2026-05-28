@@ -1,0 +1,27 @@
+# Copier ce fichier vers ~/.dbt/profiles.yml et adapter les valeurs
+# NE JAMAIS commiter le fichier profiles.yml avec vos identifiants
+
+tpch_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "<VOTRE_ACCOUNT>"            # ex: QRQOCXI-KD48953
+      user: "<VOTRE_USER>"                  # ex: JULIEN.JOUCLARD
+      authenticator: externalbrowser        # SSO - ouvre le navigateur
+      role: ACCOUNTADMIN
+      database: ANALYTICS
+      warehouse: COMPUTE_WH
+      schema: "DEV_{{ env_var('DBT_USER', 'default') }}"
+      threads: 4
+
+    prod:
+      type: snowflake
+      account: "<VOTRE_ACCOUNT>"
+      user: STREAMLIT                       # Compte de service
+      private_key_path: "/path/to/rsa_key.p8"
+      role: SYSADMIN
+      database: ANALYTICS
+      warehouse: COMPUTE_WH
+      schema: PROD
+      threads: 8

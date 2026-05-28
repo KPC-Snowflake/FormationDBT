@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: int_order_items
+    description: "Jointure entre commandes et lignes de commande, enrichie avec les informations de commande"
+    columns:
+      - name: line_item_key
+        description: "Cle primaire (surrogate)"
+        tests:
+          - unique
+          - not_null
+      - name: order_key
+        tests:
+          - not_null
+      - name: customer_key
+        tests:
+          - not_null
+
+  - name: int_order_items_summary
+    description: "Agregation des lignes de commande au niveau commande : totaux, montants, dates"
+    columns:
+      - name: order_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: net_amount
+        description: "Montant net total de la commande (apres remises et taxes)"
+      - name: line_item_count
+        description: "Nombre de lignes dans la commande"
+
+  - name: int_part_suppliers_agg
+    description: "Agregation des pieces par fournisseur : nombre de pieces, couts"
+    columns:
+      - name: supplier_key
+        description: "Cle primaire"
+        tests:
+          - unique
+          - not_null
+      - name: parts_supplied_count
+        description: "Nombre de pieces distinctes fournies"
+      - name: avg_supply_cost
+        description: "Cout moyen d'approvisionnement"
